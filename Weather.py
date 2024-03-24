@@ -3,7 +3,7 @@ from geopy.adapters import GeocoderTimedOut
 from geopy.geocoders import Nominatim
 
 def get_coordinates(zip_code):
-    geolocator = Nominatim(user_agent="My Weather App")  
+    geolocator = Nominatim(user_agent="Your Weather App")  
     try:
         location = geolocator.geocode(zip_code + ", USA")
         return location.latitude, location.longitude
@@ -15,7 +15,7 @@ def get_weather(api_key, location, units="imperial"):
     base_url = "https://api.tomorrow.io/v4/timelines"
     params = {
         'location': location,  
-        'fields': 'temperature',
+        'fields': ['temperature', 'weatherCode'],  # Include weatherCode
         'timesteps': '1h',
         'units': units,
         'apikey': api_key   
@@ -36,7 +36,7 @@ def get_hourly_forecast(api_key, coordinates, units="imperial"):
         'fields': 'temperature',
         'timesteps': '1h',
         'units': units,
-        'apikey': api_key
+        'apikey': api_key 
     }
     try:
         response = requests.get(base_url, params=params) 
@@ -62,10 +62,29 @@ if __name__ == "__main__":
                 hourly_forecasts.append(f"{time}: {temperature}°F")
             print(f"Hourly weather forecast for ZIP code {zip_code}:\n" + "\n".join(hourly_forecasts))
 
+        weather_descriptions = {
+        1000: "Sunny",
+        1100: "Mostly Sunny",
+        1101: "Partly Cloudy",
+        1102: "Mostly Cloudy",
+        1103: "Cloudy",
+        2100: "Light Fog",
+        2000: "Fog",
+        4000: "Drizzle",
+        4001: "Light Rain",
+        4002: "Rain",
+        4003: "Heavy Rain",
+        4004: "Light Snow",
+        4005: "Snow",
+        }
         # Fetch basic weather data
         weather_data = get_weather(api_key, f"{coordinates[0]},{coordinates[1]}", units="imperial")
         if weather_data: 
             current_temp = round(weather_data['data']['timelines'][0]['intervals'][0]['values']['temperature'])
-            print(f"\nCurrent Temperature: {current_temp}°F")
+            current_conditions = weather_data['data']['timelines'][0]['intervals'][0]['values']['weatherCode']
+            current_code = weather_data['data']['timelines'][0]['intervals'][0]['values']['weatherCode']
+            current_description = weather_descriptions.get(current_code, "Unknown")
+            print(f"\nCurrent Temperature: {current_temp}°F ({current_description})") 
     else:
         print("Invalid ZIP code.")
+
